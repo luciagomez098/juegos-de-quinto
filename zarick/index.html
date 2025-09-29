@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>🎮 Juegos en Sistemas en Sistemas - Dodger 2D — Juego en HTML/CSS/JS</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div>
+        <canvas id="gameCanvas" width="800" height="600" role="img" aria-label="Juego Dodger"></canvas>
+      </div>
+      <aside class="panel">
+        <div>
+          <h1>Dodger 2D — Evita los bloques</h1>
+          <div class="hint">Usa las flechas ← → o A / D para moverte. Toca los botones en pantalla si usas móvil.</div>
+        </div>
+
+        <div class="stat"><span>Puntuación</span><span id="score">0</span></div>
+        <div class="stat"><span>Vidas</span><span id="lives">3</span></div>
+        <div class="stat"><span>Velocidad</span><span id="speed">1.0x</span></div>
+
+        <div class="controls">
+          <button id="startBtn">Iniciar</button>
+          <button id="pauseBtn">Pausar</button>
+          <button id="restartBtn">Reiniciar</button>
+        </div>
+
+        <div class="touch" style="margin-top:8px">
+          <button id="leftTouch">◀</button>
+          <button id="rightTouch">▶</button>
+        </div>
+
+        <div class="footer">
+          <div class="hint">Objetivo: esquiva los bloques que caen por el mayor tiempo posible. La dificultad aumenta con la puntuación.</div>
+          <div style="margin-top:8px;color:var(--muted)">Abre este archivo en tu navegador para jugar.</div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

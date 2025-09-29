@@ -1,0 +1,52 @@
+:root{
+  --bg1: #ffdbf5;
+  --bg2: #d9c2ff;
+  --panel:#3a0045;
+  --accent:#ffd166;
+  --pink:#ff6ac1;
+  --lila:#b36bff;
+  --cloud:#fff6ff;
+}
+*{box-sizing:border-box;font-family:Inter, system-ui, sans-serif}
+body{margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; background:linear-gradient(180deg,var(--bg2),#22002a 70%); color:#fff; color: white;  background-color: black;}
+#app{width:1100px; max-width:98%; padding:12px;}
+header{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+h1{margin:0; color:var(--pink); font-size:20px; text-shadow:0 2px 8px rgba(179,107,255,0.35);}
+.controles{font-size:13px; opacity:0.95; color:#fff;}
+main{display:flex; gap:12px; align-items:flex-start;}
+canvas{background:linear-gradient(180deg,#ffe6fb,#f4e7ff); border-radius:12px; display:block; box-shadow:0 12px 30px rgba(0,0,0,0.35); border:4px solid rgba(255,255,255,0.12);}
+#panel{width:260px; background:linear-gradient(180deg, rgba(255,255,255,0.06), rgba(0,0,0,0.05)); padding:12px; border-radius:10px; color:#fff}
+.stat{margin-bottom:8px; font-size:15px}
+#panel select, #panel button{width:100%; padding:9px; margin-top:8px; border-radius:8px; border:0; background:linear-gradient(180deg,var(--pink),var(--lila)); color:#fff; font-weight:600; box-shadow:0 6px 12px rgba(179,107,255,0.12)}
+.info{font-size:13px; margin-top:10px; color:#fff}
+.credits{font-size:12px; margin-top:12px; opacity:0.85}
+footer{opacity:0.8; margin-top:10px; text-align:center; color:#fff}
+body { background-color: black;  color: white; }
+
+/* --- Estilo Femenino --- */
+
+body {
+    background: linear-gradient(135deg, #f8c8dc, #e6ccff);
+    font-family: 'Comic Sans MS', cursive, sans-serif;
+    color: #4b2e83;
+}
+
+h1, h2, h3 {
+    color: #d63384;
+    text-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+}
+
+button {
+    background: #ffb6c1;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 18px;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out;
+}
+button:hover {
+    background: #ff69b4;
+    transform: scale(1.1);
+}

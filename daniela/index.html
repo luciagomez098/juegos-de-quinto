@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>🎮 Juegos en Sistemas en Sistemas - Invaders Femenino 🌸</title>
+<link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@500&display=swap" rel="stylesheet">
+<style>
+  body {
+    margin: 0;
+    background: linear-gradient(180deg, #ffe6f2, #e6ccff);
+    font-family: 'Quicksand', sans-serif;
+    color: #555;
+  }
+  header {
+    text-align: center;
+    padding: 18px;
+    font-size: 28px;
+    font-weight: bold;
+    color: #d63384;
+    text-shadow: 2px 2px #fff;
+    background: rgba(255,255,255,0.6);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  #gameWrap {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    height:calc(100vh - 80px);
+  }
+  canvas {
+    background: transparent;
+    display:block;
+    border:6px solid #fff;
+    border-radius: 20px;
+    box-shadow:0 8px 30px rgba(0,0,0,0.2);
+  }
+  #ui {
+    position:fixed;
+    left:12px;
+    top:90px;
+    background: rgba(255,255,255,0.7);
+    padding: 8px 14px;
+    border-radius: 12px;
+    font-weight: bold;
+    color: #d63384;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  #controls {
+    position:fixed;
+    right:12px;
+    top:90px;
+    background: rgba(255,255,255,0.7);
+    padding: 12px 16px;
+    border-radius: 12px;
+    font-size: 14px;
+    color: #6f42c1;
+    line-height: 1.8;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  }
+  #msg {
+    position:fixed;
+    left:50%;
+    transform:translateX(-50%);
+    bottom:24px;
+    background: rgba(255,255,255,0.8);
+    padding: 10px 18px;
+    border-radius: 14px;
+    font-weight: bold;
+    color: #e83e8c;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  }
+  #restartBtn {
+    position: fixed;
+    right: 12px;
+    bottom: 20px;
+    background-color: #ffb6c1;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 20px;
+    font-size: 16px;
+    cursor: pointer;
+    font-weight: bold;
+    color: white;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    transition: transform 0.2s ease, background 0.3s ease;
+  }
+  #restartBtn:hover {
+    background-color: #ff69b4;
+    transform: scale(1.05);
+  }
+</style>
+</head>
+<body>
+
+<header>🌸 Constelación Rosa ✨🌸🌼</header>
+
+<button id="restartBtn" onclick="location.reload()">🔄 Reiniciar</button>
+
+<div id="ui">🌸 Puntaje: <span id="score">0</span> &nbsp; 💖 Vidas: <span id="lives">3</span></div>
+
+<div id="controls">
+  <strong>🎮 Controles</strong><br>
+  ← → / A D = mover <br>
+  ⎵ Space = disparar <br>
+  R = reiniciar
+</div>
+
+<div id="gameWrap"><canvas id="screen" width="600" height="520"></canvas></div>
+<div id="msg"></div>
+
+<script>
+const canvas = document.getElementById('screen');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+let scoreEl = document.getElementById('score');
+let livesEl = document.getElementById('lives');
+let msgEl = document.getElementById('msg');
+
+let state;
+function resetState(){
+  state = {
+    player: {x: W/2, y: H-50, w: 48, h: 30, speed: 4, cooldown:0},
+    bullets: [], 
+    enemyBullets: [],
+    invaders: [],
+    invaderDir: 1,
+    invaderSpeed: 0.4,
+    invaderStepDown: 18,
+    columns: 9,
+    rows: 4,
+    lastTick: 0,
+    score: 0,
+    lives: 3,
+    shields: [],
+    running: true,
+    level: 1,
+    gameOver: false
+  };
+  spawnInvaders();
+  updateUI();
+}
+function updateUI(){
+  scoreEl.textContent = state.score;
+  livesEl.textContent = state.lives;
+}
+
+/* -------- INPUT -------- */
+let input = {left:false,right:false,fire:false};
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowLeft' || e.key==='a') input.left=true;
+  if(e.key==='ArrowRight' || e.key==='d') input.right=true;
+  if(e.code==='Space') input.fire=true;
+  if(e.key==='r' || e.key==='R') resetState();
+});
+document.addEventListener('keyup', e=>{
+  if(e.key==='ArrowLeft' || e.key==='a') input.left=false;
+  if(e.key==='ArrowRight' || e.key==='d') input.right=false;
+  if(e.code==='Space') input.fire=false;
+});
+
+/* -------- INVASORES -------- */
+function spawnInvaders(){
+  state.invaders = [];
+  const startX = 60, startY = 60;
+  const gapX = 50, gapY = 50;
+  for(let r=0;r<state.rows;r++){
+    for(let c=0;c<state.columns;c++){
+      state.invaders.push({
+        x: startX + c*gapX,
+        y: startY + r*gapY,
+        w: 28, h: 28,
+        alive: true
+      });
+    }
+  }
+}
+
+/* -------- UTILS -------- */
+function rectsOverlap(a,b){
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+/* -------- LOOP -------- */
+function gameTick(ts){
+  if(!state.running) return;
+  const dt = Math.min(33, ts - (state.lastTick||ts));
+  state.lastTick = ts;
+
+  if(input.left) state.player.x -= state.player.speed;
+  if(input.right) state.player.x += state.player.speed;
+  state.player.x = Math.max(10, Math.min(W - state.player.w - 10, state.player.x));
+
+  if(input.fire && state.player.cooldown<=0){
+    state.bullets.push({x: state.player.x + state.player.w/2 - 6, y: state.player.y - 8, w:12, h:12, speed:6});
+    state.player.cooldown = 18;
+  }
+  if(state.player.cooldown>0) state.player.cooldown--;
+
+  for(let i=state.bullets.length-1;i>=0;i--){
+    const b = state.bullets[i];
+    b.y -= b.speed;
+    if(b.y < -10) state.bullets.splice(i,1);
+  }
+  for(let i=state.enemyBullets.length-1;i>=0;i--){
+    const b = state.enemyBullets[i];
+    b.y += b.speed;
+    if(b.y > H+10) state.enemyBullets.splice(i,1);
+  }
+
+  let hitEdge = false;
+  for(let inv of state.invaders){
+    if(!inv.alive) continue;
+    inv.x += state.invaderDir * state.invaderSpeed * dt/16;
+    if(inv.x < 10 || inv.x + inv.w > W - 10) hitEdge = true;
+  }
+  if(hitEdge){
+    state.invaderDir *= -1;
+    for(let inv of state.invaders) if(inv.alive) inv.y += state.invaderStepDown;
+  }
+
+  if(Math.random() < 0.02 * state.level){
+    const alive = state.invaders.filter(i=>i.alive);
+    if(alive.length){
+      const shooter = alive[Math.floor(Math.random()*alive.length)];
+      state.enemyBullets.push({x: shooter.x + shooter.w/2 - 4, y: shooter.y + shooter.h + 6, w:10, h:10, speed: 3 + state.level*0.2});
+    }
+  }
+
+  // Colisiones jugador
+  for(let i=state.enemyBullets.length-1;i>=0;i--){
+    const b = state.enemyBullets[i];
+    if(rectsOverlap(b, state.player)){
+      state.enemyBullets.splice(i,1);
+      state.lives--;
+      updateUI();
+      if(state.lives<=0){
+        state.gameOver = true;
+        state.running = false;
+        showMessage('💔 GAME OVER — Presiona R para reiniciar');
+      }
+    }
+  }
+
+  // Balas con invaders
+  for(let i=state.bullets.length-1;i>=0;i--){
+    const b = state.bullets[i];
+    for(let j=0;j<state.invaders.length;j++){
+      const inv = state.invaders[j];
+      if(!inv.alive) continue;
+      if(rectsOverlap(b, inv)){
+        inv.alive = false;
+        state.score += 10;
+        state.bullets.splice(i,1);
+        break;
+      }
+    }
+  }
+
+  if(state.invaders.every(i=>!i.alive)){
+    state.level++;
+    state.invaderSpeed += 0.15;
+    spawnInvaders();
+    showMessage('✨ Nivel ' + state.level + ' ✨', 1200);
+  }
+
+  updateUI();
+  render();
+  if(state.running) requestAnimationFrame(gameTick);
+}
+
+/* -------- DRAW -------- */
+function clear(){ ctx.clearRect(0,0,W,H); }
+function drawPlayer(){
+  const p = state.player;
+  ctx.font = "40px Arial";
+  ctx.shadowColor = "#ffb6c1";
+  ctx.shadowBlur = 20;
+  ctx.fillText("☁️", p.x, p.y+20);
+  ctx.shadowBlur = 0;
+}
+function drawInvaders(){
+  for(let inv of state.invaders){
+    if(!inv.alive) continue;
+    ctx.font = "28px Arial";
+    ctx.shadowColor = "#ffd700";
+    ctx.shadowBlur = 15;
+    ctx.fillText("🌻", inv.x, inv.y+20);
+    ctx.shadowBlur = 0;
+  }
+}
+function drawBullets(){
+  // jugador = corazones
+  ctx.font = "18px Arial";
+  for(const b of state.bullets){
+    ctx.fillText("💖", b.x, b.y);
+  }
+  // enemigos = semillas
+  ctx.font = "16px Arial";
+  for(const b of state.enemyBullets){
+    ctx.fillText("🌱", b.x, b.y);
+  }
+}
+function render(){
+  clear();
+  drawInvaders();
+  drawPlayer();
+  drawBullets();
+}
+
+/* -------- UTIL -------- */
+function showMessage(text, duration=0){
+  msgEl.textContent = text;
+  if(duration>0){ setTimeout(()=>{ msgEl.textContent = '' }, duration); }
+}
+
+/* -------- START -------- */
+resetState();
+showMessage('🌸 Presiona ← → para mover, Space para disparar', 2500);
+requestAnimationFrame(gameTick);
+</script>
+</body>
+</html>
+

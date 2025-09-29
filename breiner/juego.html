@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎮 Juegos en Sistemas en Sistemas - Aventura 2D - Juego de Plataformas</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+
+        .game-container {
+            position: relative;
+            background: linear-gradient(to bottom, #87CEEB 0%, #98FB98 100%);
+            border: 4px solid #333;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+        }
+
+        #gameCanvas {
+            display: block;
+            background: transparent;
+        }
+
+        .ui {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            color: #fff;
+            font-size: 20px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            z-index: 10;
+        }
+
+        .controls {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            color: #fff;
+            font-size: 14px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            z-index: 10;
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            display: none;
+            z-index: 20;
+        }
+
+        .game-over h2 {
+            margin-bottom: 15px;
+            color: #ff6b6b;
+        }
+
+        .game-over button {
+            background: #4ecdc4;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 15px;
+            transition: background 0.3s;
+        }
+
+        .game-over button:hover {
+            background: #45b7b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        
+        <div class="ui">
+            <div>Puntuación: <span id="score">0</span></div>
+            <div>Vidas: <span id="lives">3</span></div>
+        </div>
+        
+        <div class="controls">
+            Controles: A/D - Mover | W/Espacio - Saltar
+        </div>
+        
+        <div class="game-over" id="gameOver">
+            <h2>¡Juego Terminado!</h2>
+            <p>Puntuación Final: <span id="finalScore">0</span></p>
+            <button onclick="restartGame()">Jugar de Nuevo</button>
+        </div>
+    </div>
+
+   <!-- El código <head> y <style> se mantiene igual -->
+<!-- Aquí solo mostramos la parte <script> modificada -->
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const scoreElement = document.getElementById('score');
+    const livesElement = document.getElementById('lives');
+    const gameOverElement = document.getElementById('gameOver');
+    const finalScoreElement = document.getElementById('finalScore');
+
+    let gameRunning = true;
+    let score = 0;
+    let lives = 3;
+    let difficultyTimer = 0;
+
+    // Jugador
+    const player = {
+        x: 50,
+        y: 400,
+        width: 30,
+        height: 40,
+        velocityX: 0,
+        velocityY: 0,
+        speed: 5,
+        jumpPower: -15,
+        onGround: false,
+        color: '#ff6b6b'
+    };
+
+    // Plataformas
+    const platforms = [
+        {x: 0, y: 580, width: 800, height: 20, color: '#8B4513'},
+        {x: 150, y: 480, width: 100, height: 20, color: '#8B4513'},
+        {x: 350, y: 380, width: 100, height: 20, color: '#8B4513'},
+        {x: 550, y: 280, width: 100, height: 20, color: '#8B4513'},
+        {x: 250, y: 200, width: 150, height: 20, color: '#8B4513'},
+        {x: 600, y: 450, width: 80, height: 20, color: '#8B4513'}
+    ];
+
+    // Enemigos
+    let enemies = [];
+
+    function spawnEnemy() {
+        const yOptions = [540, 480, 380, 280, 200];
+        const y = yOptions[Math.floor(Math.random() * yOptions.length)];
+        const velocity = (Math.random() * 2 + 1.5) * (Math.random() < 0.5 ? 1 : -1);
+        const newEnemy = {
+            x: Math.random() * (canvas.width - 30),
+            y: y,
+            width: 25,
+            height: 25,
+            velocityX: velocity,
+            color: '#e74c3c'
+        };
+        enemies.push(newEnemy);
+    }
+
+    // Inicializar con algunos enemigos
+    for (let i = 0; i < 3; i++) {
+        spawnEnemy();
+    }
+
+    // Controles
+    const keys = {};
+    document.addEventListener('keydown', (e) => keys[e.code] = true);
+    document.addEventListener('keyup', (e) => keys[e.code] = false);
+
+    function updatePlayer() {
+        if (keys['KeyA'] || keys['ArrowLeft']) {
+            player.velocityX = -player.speed;
+        } else if (keys['KeyD'] || keys['ArrowRight']) {
+            player.velocityX = player.speed;
+        } else {
+            player.velocityX *= 0.8;
+        }
+
+        if ((keys['KeyW'] || keys['Space']) && player.onGround) {
+            player.velocityY = player.jumpPower;
+            player.onGround = false;
+        }
+
+        player.velocityY += 0.8;
+        player.x += player.velocityX;
+        player.y += player.velocityY;
+
+        if (player.x < 0) player.x = 0;
+        if (player.x + player.width > canvas.width) player.x = canvas.width - player.width;
+
+        if (player.y > canvas.height) {
+            playerDie();
+        }
+    }
+
+    function checkPlatformCollisions() {
+        player.onGround = false;
+        platforms.forEach(platform => {
+            if (
+                player.x < platform.x + platform.width &&
+                player.x + player.width > platform.x &&
+                player.y < platform.y + platform.height &&
+                player.y + player.height > platform.y
+            ) {
+                if (player.velocityY > 0 && player.y < platform.y) {
+                    player.y = platform.y - player.height;
+                    player.velocityY = 0;
+                    player.onGround = true;
+                }
+            }
+        });
+    }
+
+    function updateEnemies() {
+        enemies.forEach(enemy => {
+            enemy.x += enemy.velocityX;
+
+            if (enemy.x <= 0 || enemy.x + enemy.width >= canvas.width) {
+                enemy.velocityX = -enemy.velocityX;
+            }
+
+            // Colisión con jugador
+            if (
+                player.x < enemy.x + enemy.width &&
+                player.x + player.width > enemy.x &&
+                player.y < enemy.y + enemy.height &&
+                player.y + player.height > enemy.y
+            ) {
+                playerDie();
+            }
+        });
+    }
+
+    function playerDie() {
+        lives--;
+        livesElement.textContent = lives;
+
+        if (lives <= 0) {
+            gameRunning = false;
+            finalScoreElement.textContent = score;
+            gameOverElement.style.display = 'block';
+        } else {
+            player.x = 50;
+            player.y = 400;
+            player.velocityX = 0;
+            player.velocityY = 0;
+        }
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        platforms.forEach(platform => {
+            ctx.fillStyle = platform.color;
+            ctx.fillRect(platform.x, platform.y, platform.width, platform.height);
+            ctx.fillStyle = '#A0522D';
+            ctx.fillRect(platform.x, platform.y, platform.width, 3);
+        });
+
+        // Dibujar enemigos
+        enemies.forEach(enemy => {
+            ctx.fillStyle = enemy.color;
+            ctx.fillRect(enemy.x, enemy.y, enemy.width, enemy.height);
+
+            // Ojos
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(enemy.x + 5, enemy.y + 5, 4, 4);
+            ctx.fillRect(enemy.x + 16, enemy.y + 5, 4, 4);
+            ctx.fillStyle = '#000';
+            ctx.fillRect(enemy.x + 6, enemy.y + 6, 2, 2);
+            ctx.fillRect(enemy.x + 17, enemy.y + 6, 2, 2);
+        });
+
+        // Dibujar jugador
+        ctx.fillStyle = player.color;
+        ctx.fillRect(player.x, player.y, player.width, player.height);
+
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(player.x + 8, player.y + 8, 4, 4);
+        ctx.fillRect(player.x + 18, player.y + 8, 4, 4);
+        ctx.fillStyle = '#000';
+        ctx.fillRect(player.x + 9, player.y + 9, 2, 2);
+        ctx.fillRect(player.x + 19, player.y + 9, 2, 2);
+
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(player.x + 15, player.y + 20, 8, 0, Math.PI);
+        ctx.stroke();
+    }
+
+    function increaseDifficulty() {
+        // Cada 5 segundos, aumentar dificultad
+        difficultyTimer++;
+        if (difficultyTimer % 5 === 0) {
+            spawnEnemy();
+            enemies.forEach(enemy => {
+                enemy.velocityX *= 1.1; // Aumentar velocidad
+            });
+        }
+    }
+
+    function gameLoop() {
+        if (gameRunning) {
+            updatePlayer();
+            checkPlatformCollisions();
+            updateEnemies();
+            draw();
+
+            // Aumentar puntuación cada segundo
+            if (performance.now() % 1000 < 16.7) {
+                score++;
+                scoreElement.textContent = score;
+                increaseDifficulty();
+            }
+        }
+        requestAnimationFrame(gameLoop);
+    }
+
+    function restartGame() {
+        gameRunning = true;
+        score = 0;
+        lives = 3;
+        difficultyTimer = 0;
+
+        player.x = 50;
+        player.y = 400;
+        player.velocityX = 0;
+        player.velocityY = 0;
+
+        enemies = [];
+        for (let i = 0; i < 3; i++) spawnEnemy();
+
+        scoreElement.textContent = score;
+        livesElement.textContent = lives;
+        gameOverElement.style.display = 'none';
+    }
+
+    gameLoop();
+</script>

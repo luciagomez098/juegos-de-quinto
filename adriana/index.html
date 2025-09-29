@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>🎮 Juegos en Sistemas en Sistemas - Juego de Adriana — Guerrera Femenina</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <header>
+      <h1>Juego de Adriana — Guerrera Femenina</h1>
+      <div class="controles">Controles: ← → mover • ↑ saltar • Espacio atacar • P pausa</div>
+    </header>
+    <main>
+      <canvas id="game" width="960" height="560" aria-label="Canvas del juego"></canvas>
+      <aside id="panel">
+        <div class="stat"><strong>Nivel:</strong> <span id="nivel">1</span></div>
+        <div class="stat"><strong>Vidas:</strong> <span id="vidas">2</span></div>
+        <div class="stat"><strong>Puntos:</strong> <span id="puntos">0</span></div>
+        <label for="dificultad">Dificultad</label>
+        <select id="dificultad">
+          <option value="1.3">Normal</option>
+          <option value="1.6" selected>Difícil</option>
+          <option value="2">Extremo</option>
+        </select>
+        <button id="btnStart">Iniciar / Reiniciar</button>
+        <button id="btnResume">Continuar</button>
+        <p class="info">Objetivo: recoge corazones ✨, evita trampas y derrota a las sombras.</p>
+        <div class="credits">Diseñado para Adriana — Estilo femenino y guerrera</div>
+      </aside>
+    </main>
+    <footer>¿Quieres más cambios? Pide: música, iconos, o niveles extra.</footer>
+  </div>
+<script src="game.js"></script>
+</body>
+</html>
